@@ -1,7 +1,9 @@
 // axios encapsulation
 
 import axios from 'axios'
-import {_getToken} from "@/utils/token";
+import {_getToken, _removeToken} from "@/utils/token";
+import {clearUserInfo} from "@/store/slices/user";
+import router from "@/router";
 
 // 1. base url
 // 2. timeout
@@ -10,9 +12,11 @@ const request = axios.create({
     timeout: 5000
 })
 
+
 // 添加请求拦截器
 // 在请求发送之前 做拦截 插入一些自定义配置
 request.interceptors.request.use((config)=> {
+
     //  inject token into config
     const token = _getToken()
     if (token) {
@@ -31,8 +35,15 @@ request.interceptors.response.use((response)=> {
     // 对响应数据做点什么
     return response.data
 }, (error)=> {
-    // 超出 2xx 范围的状态码都会触发该函数。
-    // 对响应错误做点什么
+    // monitor 401 code -- token expired
+    // console.log(error)
+    if (error.response.status === 401) {
+        console.log(123123)
+        _removeToken()
+        clearUserInfo()
+        router.navigate('/login')
+        window.location.reload()
+    }
     return Promise.reject(error)
 })
 
