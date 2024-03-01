@@ -1,5 +1,10 @@
-import {http} from './request'
+import {request} from './request'
+
+import {_getToken, _setToken, _removeToken} from "@/utils/token";
 
 export {
-    http
+    request,
+    _getToken,
+    _setToken,
+    _removeToken
 }

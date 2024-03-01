@@ -2,13 +2,13 @@ import './index.scss'
 import {Card, Form, Input, Button, message} from 'antd'
 import logo from '@/assets/logo.png'
 import {fetchLogin} from "@/store/slices/user";
-
 import {useDispatch} from "react-redux";
 import {useNavigate} from "react-router-dom";
 
 const Login = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
+
     const onFinishHandler = async (values) => {
         await dispatch(fetchLogin(values))
         navigate('/')

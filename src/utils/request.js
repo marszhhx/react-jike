@@ -1,17 +1,24 @@
 // axios encapsulation
 
 import axios from 'axios'
+import {_getToken} from "@/utils/token";
 
 // 1. base url
 // 2. timeout
-const http = axios.create({
+const request = axios.create({
     baseURL:'http://geek.itheima.net/v1_0',
     timeout: 5000
 })
 
 // 添加请求拦截器
 // 在请求发送之前 做拦截 插入一些自定义配置
-http.interceptors.request.use((config)=> {
+request.interceptors.request.use((config)=> {
+    //  inject token into config
+    const token = _getToken()
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+
     return config
 }, (error)=> {
     return Promise.reject(error)
@@ -19,7 +26,7 @@ http.interceptors.request.use((config)=> {
 
 // 添加响应拦截器
 // 响应返回到客户端之前 做拦截 重点处理返回的数据
-http.interceptors.response.use((response)=> {
+request.interceptors.response.use((response)=> {
     // 2xx 范围内的状态码都会触发该函数。
     // 对响应数据做点什么
     return response.data
@@ -31,4 +38,4 @@ http.interceptors.response.use((response)=> {
 
 
 // 3. request interceptor, response interceptor
-export {http}
+export {request}
