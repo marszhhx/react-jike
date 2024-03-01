@@ -1,7 +1,7 @@
 // store user-related state
 import {createSlice} from '@reduxjs/toolkit'
 import {_getToken, _setToken, _removeToken, request} from "@/utils";
-
+import {loginAPI, getProfileAPI} from "@/apis/user";
 
 const userStore = createSlice({
     name: "user",
@@ -11,12 +11,12 @@ const userStore = createSlice({
 
     },
     reducers: {
-        setToken (state, action) {
+        setToken(state, action) {
             state.token = action.payload
             // store a copy to local storage
             _setToken(action.payload)
         },
-        setUserInfo(state, action){
+        setUserInfo(state, action) {
             state.userInfo = action.payload
         },
         clearUserInfo(state) {
@@ -28,26 +28,26 @@ const userStore = createSlice({
 })
 
 // action creator
-const { setToken, setUserInfo, clearUserInfo } = userStore.actions
+const {setToken, setUserInfo, clearUserInfo} = userStore.actions
 
 // get reducer
 const userReducer = userStore.reducer
 
 const fetchLogin = (loginFormValues) => {
     return async (dispatch) => {
-        const res = await request.post('/authorizations',loginFormValues)
+        const res = await loginAPI(loginFormValues)
         dispatch(setToken(res.data.token))
     }
 }
 
 const fetchUserInfo = () => {
     return async (dispatch) => {
-        const res = await request.get('/user/profile')
+        const res = await getProfileAPI()
         dispatch(setUserInfo(res.data))
     }
 }
 
 
-export { setToken, fetchLogin, fetchUserInfo, clearUserInfo }
+export {setToken, fetchLogin, fetchUserInfo, clearUserInfo}
 
 export default userReducer
