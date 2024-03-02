@@ -8,7 +8,7 @@ export const getChannelAPI = () => {
 }
 
 
-export const createArticleAPI = (data) => {
+export const publishArticleAPI = (data) => {
     return request({
         url: '/mp/articles?draft=false',
         method: 'POST',
