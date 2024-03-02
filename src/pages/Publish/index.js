@@ -7,7 +7,7 @@ import {
     Input,
     Upload,
     Space,
-    Select
+    Select, message
 } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import ReactQuill from "react-quill";
@@ -31,15 +31,18 @@ const Publish = () => {
 
 
     const onFinishHandler = (formData) => {
+        if (imageList.length !== imageType) return message.warning("Cover type does not match image count")
         const {title, content, channel_id} = formData
+        const urls = imageList.map(item => item.response.data.url)
+        console.log(urls)
         const reqData = {
             title,
             content,
             cover: {
-                type: 0,
-                images: []
+                type: imageType,
+                images: urls
             },
-            channel_id,
+            channel_id
         }
         publishArticleAPI(reqData)
     }
@@ -50,6 +53,11 @@ const Publish = () => {
         console.log("uploading...", imageData.fileList)
     }
 
+    const [imageType, setImageType] = useState([])
+    const onImageTypeChangeHandler = (e) => {
+        console.log(e)
+        setImageType(e.target.value)
+    }
     return (
         <div className="publish">
             <Card
@@ -64,7 +72,7 @@ const Publish = () => {
                 <Form
                     labelCol={{ span: 4 }}
                     wrapperCol={{ span: 16 }}
-                    initialValues={{ type: 1 }}
+                    initialValues={{ type: 0 }}
                     onFinish={onFinishHandler}
                 >
                     <Form.Item
@@ -85,23 +93,25 @@ const Publish = () => {
                     </Form.Item>
                     <Form.Item label="封面">
                         <Form.Item name="type">
-                            <Radio.Group>
+                            <Radio.Group onChange={onImageTypeChangeHandler}>
                                 <Radio value={1}>单图</Radio>
                                 <Radio value={3}>三图</Radio>
                                 <Radio value={0}>无图</Radio>
                             </Radio.Group>
                         </Form.Item>
+                        {imageType > 0 &&
                         <Upload
                             name='image'
                             listType="picture-card"
                             showUploadList
                             action={'http://geek.itheima.net/v1_0/upload'}
                             onChange={onChangeHandler}
+                            maxCount={imageType}
                         >
                             <div style={{ marginTop: 8 }}>
                                 <PlusOutlined />
                             </div>
-                        </Upload>
+                        </Upload>}
                     </Form.Item>
                     <Form.Item
                         label="Content"
