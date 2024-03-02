@@ -15,7 +15,7 @@ import 'react-quill/dist/quill.snow.css'
 import { Link } from 'react-router-dom'
 import './index.scss'
 import {useEffect, useState} from "react";
-import {getChannelAPI} from "@/apis/article";
+import {createArticleAPI, getChannelAPI} from "@/apis/article";
 
 const { Option } = Select
 
@@ -29,6 +29,21 @@ const Publish = () => {
         getChannelList()
     },[])
 
+
+    const onFinishHandler = (formData) => {
+        const {title, content, channel_id} = formData
+        const reqData = {
+            title,
+            content,
+            cover: {
+                type: 0,
+                images: []
+            },
+            channel_id,
+        }
+
+        createArticleAPI(reqData)
+    }
 
     return (
         <div className="publish">
@@ -45,16 +60,17 @@ const Publish = () => {
                     labelCol={{ span: 4 }}
                     wrapperCol={{ span: 16 }}
                     initialValues={{ type: 1 }}
+                    onFinish={onFinishHandler}
                 >
                     <Form.Item
-                        label="标题"
+                        label="Title"
                         name="title"
                         rules={[{ required: true, message: '请输入文章标题' }]}
                     >
                         <Input placeholder="请输入文章标题" style={{ width: 400 }} />
                     </Form.Item>
                     <Form.Item
-                        label="频道"
+                        label="Channel"
                         name="channel_id"
                         rules={[{ required: true, message: '请选择文章频道' }]}
                     >
@@ -63,7 +79,7 @@ const Publish = () => {
                         </Select>
                     </Form.Item>
                     <Form.Item
-                        label="内容"
+                        label="Content"
                         name="content"
                         rules={[{ required: true, message: '请输入文章内容' }]}
                     >
