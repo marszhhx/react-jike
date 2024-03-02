@@ -16,19 +16,13 @@ import { Link } from 'react-router-dom'
 import './index.scss'
 import {useEffect, useState} from "react";
 import {publishArticleAPI, getChannelAPI} from "@/apis/article";
+import {useChannel} from "@/hooks/useChannel";
 
 const { Option } = Select
 
 const Publish = () => {
-    const [channelList, setChannelList] = useState([]);
-    const getChannelList = async () => {
-        const res = await getChannelAPI();
-        setChannelList(res.data.channels)
-    }
-    useEffect(() => {
-        getChannelList()
-    },[])
 
+    const {channelList} = useChannel();
 
     const onFinishHandler = (formData) => {
         if (imageList.length !== imageType) return message.warning("Cover type does not match image count")
@@ -137,5 +131,6 @@ const Publish = () => {
         </div>
     )
 }
+
 
 export default Publish
