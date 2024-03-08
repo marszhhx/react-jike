@@ -1,11 +1,13 @@
-import {Link} from 'react-router-dom'
-import {Card, Breadcrumb, Form, Button, Radio, DatePicker, Select} from 'antd'
+import {Link, useNavigate} from 'react-router-dom'
+import {Card, Breadcrumb, Form, Button, Radio, DatePicker, Select, Popconfirm} from 'antd'
 import locale from 'antd/es/date-picker/locale/zh_CN'
 
 import {Table, Tag, Space} from 'antd'
 import {EditOutlined, DeleteOutlined} from '@ant-design/icons'
 import img404 from '@/assets/error.png'
 import {useChannel} from "@/hooks/useChannel";
+import {useEffect, useState} from "react";
+import {deleteArticleAPI, getArticleListAPI} from "@/apis/article";
 
 
 const {Option} = Select
@@ -15,6 +17,13 @@ const {RangePicker} = DatePicker
 const Article = () => {
 
     const {channelList} = useChannel()
+
+    const status = {
+        1: <Tag color='warning'>Pending</Tag>,
+        2: <Tag color='success'>Approved</Tag>
+    }
+
+    // This is a configuration array
     const columns = [
         {
             title: '封面',
@@ -32,7 +41,10 @@ const Article = () => {
         {
             title: '状态',
             dataIndex: 'status',
-            render: data => <Tag color="green">审核通过</Tag>
+            // data为后端返回的status
+            // data === 1 => pending approval
+            // data === 2 => approved
+            render: data => status[data]
         },
         {
             title: '发布时间',
@@ -55,33 +67,99 @@ const Article = () => {
             render: data => {
                 return (
                     <Space size="middle">
-                        <Button type="primary" shape="circle" icon={<EditOutlined/>}/>
-                        <Button
-                            type="primary"
-                            danger
-                            shape="circle"
-                            icon={<DeleteOutlined/>}
-                        />
+                        <Button type="primary" shape="circle" icon={<EditOutlined/>} onClick={() => onEditClickHandler(data)}/>
+                        <Popconfirm
+                            title="Delete the article"
+                            description="Are you sure to delete this task?"
+                            onConfirm={()=>onDeleteConfirmHandler(data)}
+                            okText="Yes"
+                            cancelText="No"
+                            >
+                            <Button
+                                type="primary"
+                                danger
+                                shape="circle"
+                                icon={<DeleteOutlined/>}
+                            />
+                        </Popconfirm>
                     </Space>
                 )
             }
         }
     ]
-    // 准备表格body数据
-    const data = [
-        {
-            id: '8218',
-            comment_count: 0,
-            cover: {
-                images: [],
-            },
-            like_count: 0,
-            pubdate: '2019-03-11 09:00:00',
-            read_count: 2,
-            status: 2,
-            title: 'wkwebview离线化加载h5资源解决方案'
-        }
-    ]
+    // // 准备表格body数据
+    // const data = [
+    //     {
+    //         id: '8218',
+    //         comment_count: 0,
+    //         cover: {
+    //             images: [],
+    //         },
+    //         like_count: 0,
+    //         pubdate: '2019-03-11 09:00:00',
+    //         read_count: 2,
+    //         status: 2,
+    //         title: 'wkwebview离线化加载h5资源解决方案'
+    //     }
+    // ]
+
+    // get article list
+    const [articleList, setArticleList] = useState([])
+    const [count, setCount] = useState(0)
+
+    async function getArticleList() {
+        const res = await getArticleListAPI(reqData)
+        setArticleList(res.data.results)
+        setCount(res.data.total_count)
+    }
+
+    // Filter Article
+    const [reqData, setReqData] = useState({
+        status: '',
+        channel_id: '',
+        begin_pubdate: '',
+        end_pubdate: '',
+        page: 1,
+        per_page: 4
+    })
+
+    const onFinishHandler = (formData) => {
+        setReqData({
+            ...reqData,
+            channel_id: formData.channel_id,
+            status: formData.status,
+            begin_pubdate: formData.date[0].format('YYYY-MM-DD'),
+            end_pubdate: formData.date[1].format('YYYY-MM-DD'),
+        })
+    }
+
+    const onPageChangeHandler = (page) => {
+        console.log(page)
+        setReqData({
+            ...reqData,
+            page
+        })
+    }
+
+    const onDeleteConfirmHandler = async (data) => {
+        // console.log("delete clicked", data)
+        await deleteArticleAPI(data.id)
+        // update article list
+        setReqData({
+            ...reqData
+        })
+    }
+
+    const navigate = useNavigate()
+    const onEditClickHandler = (data) => {
+        navigate(`/publish?id=${data.id}`)
+    }
+
+    useEffect(() => {
+        getArticleList()
+    },[reqData])
+
+
 
     return (
         <div>
@@ -94,7 +172,7 @@ const Article = () => {
                 }
                 style={{marginBottom: 20}}
             >
-                <Form initialValues={{status: ''}}>
+                <Form initialValues={{status: ''}} onFinish={onFinishHandler}>
                     <Form.Item label="状态" name="status">
                         <Radio.Group>
                             <Radio value={''}>全部</Radio>
@@ -125,8 +203,16 @@ const Article = () => {
                     </Form.Item>
                 </Form>
             </Card>
-            <Card title={`根据筛选条件共查询到 count 条结果：`}>
-                <Table rowKey="id" columns={columns} dataSource={data}/>
+            <Card title={`根据筛选条件共查询到 ${count} 条结果：`}>
+                <Table rowKey="id"
+                       columns={columns}
+                       dataSource={articleList}
+                       pagination={{
+                           total: count,
+                           pageSize: reqData.per_page,
+                           onChange: onPageChangeHandler
+                       }}
+                />
             </Card>
         </div>
     )

@@ -12,10 +12,10 @@ import {
 import { PlusOutlined } from '@ant-design/icons'
 import ReactQuill from "react-quill";
 import 'react-quill/dist/quill.snow.css'
-import { Link } from 'react-router-dom'
+import {Link, useSearchParams} from 'react-router-dom'
 import './index.scss'
 import {useEffect, useState} from "react";
-import {publishArticleAPI, getChannelAPI} from "@/apis/article";
+import {publishArticleAPI, getChannelAPI, getArticleById, updateArticleAPI} from "@/apis/article";
 import {useChannel} from "@/hooks/useChannel";
 
 const { Option } = Select
@@ -27,18 +27,30 @@ const Publish = () => {
     const onFinishHandler = (formData) => {
         if (imageList.length !== imageType) return message.warning("Cover type does not match image count")
         const {title, content, channel_id} = formData
-        const urls = imageList.map(item => item.response.data.url)
+        const urls = imageList.map(item => {
+            if (item.response) {
+                return item.response.data.url
+            } else {
+                return item.url
+            }
+        })
         console.log(urls)
         const reqData = {
             title,
             content,
             cover: {
                 type: imageType,
+                // 这个只是新增时的逻辑
+                // 编辑的时候也需要做处理
                 images: urls
             },
             channel_id
         }
-        publishArticleAPI(reqData)
+        if (articleId) {
+            updateArticleAPI(...reqData, articleId)
+        } else {
+            publishArticleAPI(reqData)
+        }
     }
 
     const [imageList, setImageList] = useState([])
@@ -52,13 +64,40 @@ const Publish = () => {
         console.log(e)
         setImageType(e.target.value)
     }
+
+    const [form] = Form.useForm()
+    const [searchParams] = useSearchParams()
+    const articleId = searchParams.get('id')
+
+    useEffect(() => {
+        // 1. get id
+        const getArticleDetail = async () => {
+            const res = await getArticleById(articleId)
+            form.setFieldsValue( {
+                ...res.data,
+                type: res.data.cover
+            })
+            // 回填图片列表
+            setImageType(res.data.cover.type)
+            // 显示图片 {url: url}
+            setImageList(res.data.cover.images.map(url => {
+                return {url}
+            }))
+        }
+        // console.log(res)
+        if (articleId) {
+            getArticleDetail()
+        }
+        // 2. call
+    },[articleId, form])
+
     return (
         <div className="publish">
             <Card
                 title={
                     <Breadcrumb items={[
                         { title: <Link to={'/'}>首页</Link> },
-                        { title: '发布文章' },
+                        { title: `${articleId ? 'Edit' : 'Publish'}` },
                     ]}
                     />
                 }
@@ -68,6 +107,8 @@ const Publish = () => {
                     wrapperCol={{ span: 16 }}
                     initialValues={{ type: 0 }}
                     onFinish={onFinishHandler}
+                    form={form}
+                    fileList={imageList}
                 >
                     <Form.Item
                         label="Title"
